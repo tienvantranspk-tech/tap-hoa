@@ -2,12 +2,18 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000
 
 let authToken: string | null = localStorage.getItem("token");
 
+const clearAuthState = () => {
+  authToken = null;
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+};
+
 export const setAuthToken = (token: string | null) => {
   authToken = token;
   if (token) {
     localStorage.setItem("token", token);
   } else {
-    localStorage.removeItem("token");
+    clearAuthState();
   }
 };
 
@@ -23,7 +29,20 @@ export const apiRequest = async <T>(path: string, options: RequestInit = {}) => 
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `Yêu cầu thất bại (${res.status})`);
+
+    if (res.status === 401) {
+      clearAuthState();
+      if (window.location.pathname !== "/login") {
+        window.location.assign("/login");
+      }
+    }
+
+    throw new Error(
+      body.message ||
+        (res.status === 401
+          ? "Phien dang nhap het han, vui long dang nhap lai."
+          : `Yeu cau that bai (${res.status})`)
+    );
   }
 
   return (await res.json()) as T;

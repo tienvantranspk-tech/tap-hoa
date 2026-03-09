@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import { AppError } from "../utils/appError";
 import { logger } from "../config/logger";
@@ -23,6 +24,30 @@ export const errorHandler = (error: unknown, _req: Request, res: Response, _next
   if (error instanceof AppError) {
     return res.status(error.statusCode).json({
       message: error.message,
+    });
+  }
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P2002") {
+      return res.status(409).json({
+        message: "Du lieu bi trung, vui long kiem tra lai.",
+      });
+    }
+    if (error.code === "P2003") {
+      return res.status(400).json({
+        message: "Du lieu lien ket khong hop le hoac da bi xoa.",
+      });
+    }
+    if (error.code === "P2025") {
+      return res.status(404).json({
+        message: "Khong tim thay du lieu yeu cau.",
+      });
+    }
+  }
+
+  if (error instanceof Prisma.PrismaClientValidationError) {
+    return res.status(400).json({
+      message: "Du lieu gui len khong hop le.",
     });
   }
 
