@@ -120,5 +120,5 @@ export const transferStock = async (input: TransferStockInput, db: DbLike = pris
     });
 
     return transfer;
-  });
+  }, { maxWait: 15000, timeout: 30000 });
 };

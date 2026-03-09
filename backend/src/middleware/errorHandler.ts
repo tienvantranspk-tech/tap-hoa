@@ -46,6 +46,7 @@ export const errorHandler = (error: unknown, _req: Request, res: Response, _next
   }
 
   if (error instanceof Prisma.PrismaClientValidationError) {
+    logger.error("Prisma validation error", error.message);
     return res.status(400).json({
       message: "Du lieu gui len khong hop le.",
     });

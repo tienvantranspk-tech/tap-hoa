@@ -115,4 +115,6 @@ Co 3 service test toi thieu:
 - TypeScript `strict` cho backend/frontend.
 - Tat ca config doc tu env, khong hardcode URL/secret trong code runtime.
 - Neu can in A6, chinh trong `frontend/src/styles/index.css` (`@page size`).
+- Version hien thi tren UI lay tu `VITE_APP_VERSION` (neu khong set se dung version trong `frontend/package.json`).
+- `GET /health` tra ve `version` cua backend (co the override bang env `APP_VERSION`).
 

@@ -183,7 +183,7 @@ export const createSale = async (input: CreateSaleInput, db: DbLike = prisma) =>
     });
 
     return invoice;
-  });
+  }, { maxWait: 15000, timeout: 30000 });
 };
 
 export const voidInvoice = async (
@@ -243,7 +243,7 @@ export const voidInvoice = async (
     });
 
     return updated;
-  });
+  }, { maxWait: 15000, timeout: 30000 });
 };
 
 export const returnInvoiceItems = async (
@@ -370,5 +370,5 @@ export const returnInvoiceItems = async (
       items: returnedItems,
       returnedAt: new Date(),
     };
-  });
+  }, { maxWait: 15000, timeout: 30000 });
 };

@@ -116,5 +116,5 @@ export const createPurchaseReceipt = async (input: CreatePurchaseReceiptInput, d
     });
 
     return receipt;
-  });
+  }, { maxWait: 15000, timeout: 30000 });
 };

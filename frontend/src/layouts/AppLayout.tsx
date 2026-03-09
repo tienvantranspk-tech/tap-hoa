@@ -1,6 +1,7 @@
 ﻿import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { roleLabel } from "../utils/labels";
+import { APP_BUILD_TIME, APP_VERSION } from "../utils/version";
 import type { Role } from "../types";
 
 const links: Array<{ to: string; label: string; roles: Role[] }> = [
@@ -25,6 +26,10 @@ export const AppLayout = () => {
           <div>
             <p className="text-xl font-black uppercase tracking-wide text-brand-500">Siêu thị đồng giá</p>
             <p className="text-xs text-brand-700/70">POS + Kho + Báo cáo</p>
+            <p className="text-[11px] text-brand-700/60">
+              v{APP_VERSION}
+              {APP_BUILD_TIME ? ` • Build ${APP_BUILD_TIME}` : ""}
+            </p>
           </div>
           <div className="text-right text-sm">
             <p className="font-semibold text-brand-800">{user?.fullName || user?.email}</p>

@@ -1,6 +1,7 @@
-import { FormEvent, useState } from "react";
+﻿import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { APP_BUILD_TIME, APP_VERSION } from "../utils/version";
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -30,6 +31,10 @@ export const LoginPage = () => {
         <div className="text-center">
           <p className="text-3xl font-black text-brand-500">Siêu thị đồng giá</p>
           <p className="mt-1 text-sm text-brand-700/70">Đăng nhập hệ thống POS</p>
+          <p className="mt-2 text-xs text-brand-700/60">
+            v{APP_VERSION}
+            {APP_BUILD_TIME ? ` • Build ${APP_BUILD_TIME}` : ""}
+          </p>
         </div>
 
         <div className="space-y-1.5">

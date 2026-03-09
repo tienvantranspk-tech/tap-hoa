@@ -120,7 +120,7 @@ export const adjustStock = async (input: {
     });
 
     return entry;
-  });
+  }, { maxWait: 15000, timeout: 30000 });
 };
 
 export const stockCount = async (input: {
@@ -211,5 +211,5 @@ export const stockCount = async (input: {
       adjustments,
       countedAt: new Date(),
     };
-  });
+  }, { maxWait: 15000, timeout: 30000 });
 };
