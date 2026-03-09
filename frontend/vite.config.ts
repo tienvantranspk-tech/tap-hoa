@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/tap-hoa/",
+  base: "/",
   server: {
     port: 5173,
   },
