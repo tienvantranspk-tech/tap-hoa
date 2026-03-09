@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      Int                       @id @default(autoincrement())
+  email                   String                    @unique
+  passwordHash            String
+  role                    String
+  fullName                String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  salesInvoicesCreated    SalesInvoice[]            @relation("InvoiceCreatedBy")
+  purchaseReceiptsCreated PurchaseReceipt[]         @relation("ReceiptCreatedBy")
+  auditLogs               AuditLog[]
+  tierChanges             ProductPriceTierHistory[]
+  transfersCreated        StockTransfer[]           @relation("TransferCreatedBy")
+  debtTransactions        DebtTransaction[]         @relation("DebtCreatedBy")
+}
+
+model PriceTier {
+  id              Int                        @id @default(autoincrement())
+  name            String
+  price           Int
+  products        Product[]
+  tierHistoryFrom ProductPriceTierHistory[]  @relation("TierFrom")
+  tierHistoryTo   ProductPriceTierHistory[]  @relation("TierTo")
+}
+
+model Product {
+  id            Int                        @id @default(autoincrement())
+  sku           String                     @unique
+  barcode       String                     @unique
+  name          String
+  unit          String
+  priceTierId   Int?
+  customPrice   Int?
+  cost          Float
+  active        Boolean                    @default(true)
+  minStock      Int                        @default(0)
+  promoPrice    Int?
+  promoStartAt  DateTime?
+  promoEndAt    DateTime?
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  priceTier     PriceTier?                 @relation(fields: [priceTierId], references: [id])
+  stockLedgers  StockLedger[]
+  salesLines    SalesLine[]
+  purchaseLines PurchaseLine[]
+  tierHistory   ProductPriceTierHistory[]
+  transferLines StockTransferLine[]
+
+  @@index([name])
+  @@index([barcode])
+}
+
+model ProductPriceTierHistory {
+  id             Int       @id @default(autoincrement())
+  productId      Int
+  oldPriceTierId Int
+  newPriceTierId Int
+  changedById    Int
+  changedAt      DateTime  @default(now())
+  product        Product   @relation(fields: [productId], references: [id])
+  oldPriceTier   PriceTier @relation("TierFrom", fields: [oldPriceTierId], references: [id])
+  newPriceTier   PriceTier @relation("TierTo", fields: [newPriceTierId], references: [id])
+  changedBy      User      @relation(fields: [changedById], references: [id])
+
+  @@index([productId, changedAt])
+}
+
+model Customer {
+  id               Int                @id @default(autoincrement())
+  name             String
+  phone            String?
+  address          String?
+  debtLimit        Int                @default(0)
+  createdAt        DateTime           @default(now())
+  invoices         SalesInvoice[]
+  debtTransactions DebtTransaction[]
+}
+
+model DebtTransaction {
+  id           Int      @id @default(autoincrement())
+  customerId   Int
+  invoiceId    Int?
+  type         String
+  amount       Int
+  balanceAfter Int
+  note         String?
+  createdById  Int?
+  createdAt    DateTime @default(now())
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  invoice      SalesInvoice? @relation(fields: [invoiceId], references: [id])
+  createdBy    User?         @relation("DebtCreatedBy", fields: [createdById], references: [id])
+
+  @@index([customerId, createdAt])
+}
+
+model Supplier {
+  id        Int               @id @default(autoincrement())
+  name      String
+  phone     String?
+  address   String?
+  createdAt DateTime          @default(now())
+  receipts  PurchaseReceipt[]
+}
+
+model Warehouse {
+  id            Int             @id @default(autoincrement())
+  name          String
+  location      String?
+  createdAt     DateTime        @default(now())
+  stockLedgers  StockLedger[]
+  invoices      SalesInvoice[]
+  receipts      PurchaseReceipt[]
+  transfersFrom StockTransfer[] @relation("TransferFromWarehouse")
+  transfersTo   StockTransfer[] @relation("TransferToWarehouse")
+}
+
+model StockLedger {
+  id          Int       @id @default(autoincrement())
+  productId   Int
+  warehouseId Int
+  qtyChange   Int
+  unitCost    Float
+  refType     String
+  refId       String
+  note        String?
+  createdAt   DateTime  @default(now())
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@index([productId, warehouseId, createdAt])
+  @@index([refType, refId])
+}
+
+model SalesInvoice {
+  id               Int               @id @default(autoincrement())
+  code             String            @unique
+  customerId       Int
+  warehouseId      Int
+  subtotal         Int
+  discount         Int
+  total            Int
+  status           String            @default("COMPLETED")
+  createdById      Int
+  voidReason       String?
+  voidedAt         DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  warehouse        Warehouse         @relation(fields: [warehouseId], references: [id])
+  createdBy        User              @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  lines            SalesLine[]
+  payments         Payment[]
+  debtTransactions DebtTransaction[]
+
+  @@index([createdAt])
+}
+
+model SalesLine {
+  id        Int          @id @default(autoincrement())
+  invoiceId Int
+  productId Int
+  qty       Int
+  unitPrice Int
+  unitCost  Float
+  lineTotal Int
+  invoice   SalesInvoice @relation(fields: [invoiceId], references: [id])
+  product   Product      @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id        Int          @id @default(autoincrement())
+  invoiceId Int
+  method    String
+  amount    Int
+  createdAt DateTime     @default(now())
+  invoice   SalesInvoice @relation(fields: [invoiceId], references: [id])
+}
+
+model PurchaseReceipt {
+  id          Int            @id @default(autoincrement())
+  code        String         @unique
+  supplierId  Int
+  warehouseId Int
+  totalCost   Int
+  createdById Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  supplier    Supplier       @relation(fields: [supplierId], references: [id])
+  warehouse   Warehouse      @relation(fields: [warehouseId], references: [id])
+  createdBy   User           @relation("ReceiptCreatedBy", fields: [createdById], references: [id])
+  lines       PurchaseLine[]
+
+  @@index([createdAt])
+}
+
+model PurchaseLine {
+  id        Int             @id @default(autoincrement())
+  receiptId Int
+  productId Int
+  qty       Int
+  unitCost  Float
+  lineCost  Int
+  receipt   PurchaseReceipt @relation(fields: [receiptId], references: [id])
+  product   Product         @relation(fields: [productId], references: [id])
+}
+
+model StockTransfer {
+  id              Int                 @id @default(autoincrement())
+  code            String              @unique
+  fromWarehouseId Int
+  toWarehouseId   Int
+  createdById     Int
+  note            String?
+  createdAt       DateTime            @default(now())
+  fromWarehouse   Warehouse           @relation("TransferFromWarehouse", fields: [fromWarehouseId], references: [id])
+  toWarehouse     Warehouse           @relation("TransferToWarehouse", fields: [toWarehouseId], references: [id])
+  createdBy       User                @relation("TransferCreatedBy", fields: [createdById], references: [id])
+  lines           StockTransferLine[]
+}
+
+model StockTransferLine {
+  id         Int           @id @default(autoincrement())
+  transferId Int
+  productId  Int
+  qty        Int
+  unitCost   Float
+  transfer   StockTransfer @relation(fields: [transferId], references: [id])
+  product    Product       @relation(fields: [productId], references: [id])
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  entity      String
+  entityId    String
+  action      String
+  beforeJson  String?
+  afterJson   String?
+  createdById Int?
+  createdAt   DateTime @default(now())
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}

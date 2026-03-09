@@ -1,0 +1,92 @@
+### Variables
+@baseUrl = http://localhost:4000
+@api = {{baseUrl}}/api
+@token = REPLACE_WITH_JWT
+
+### Health
+GET {{baseUrl}}/health
+
+### Login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@donggia.local",
+  "password": "123456"
+}
+
+### Products
+GET {{api}}/products
+Authorization: Bearer {{token}}
+
+### Create Sale Invoice
+POST {{api}}/sales/invoices
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "warehouseId": 1,
+  "discountType": "amount",
+  "discountValue": 0,
+  "items": [
+    { "productId": 1, "qty": 2 },
+    { "productId": 2, "qty": 1 }
+  ],
+  "payments": [
+    { "method": "CASH", "amount": 35000 }
+  ]
+}
+
+### Void Invoice
+POST {{api}}/sales/invoices/1/void
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Customer return"
+}
+
+### Create Purchase Receipt
+POST {{api}}/purchases/receipts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "supplierId": 1,
+  "warehouseId": 1,
+  "items": [
+    { "productId": 1, "qty": 20, "unitCost": 6000 },
+    { "productId": 2, "qty": 15, "unitCost": 7000 }
+  ]
+}
+
+### Transfer Stock
+POST {{api}}/warehouses/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fromWarehouseId": 1,
+  "toWarehouseId": 2,
+  "note": "Rebalance",
+  "items": [
+    { "productId": 1, "qty": 5 }
+  ]
+}
+
+### Stock Adjust
+POST {{api}}/warehouses/adjust
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "warehouseId": 1,
+  "productId": 1,
+  "qtyChange": -2,
+  "note": "Hao hut"
+}
+
+### Reports
+GET {{api}}/reports/summary?period=day
+Authorization: Bearer {{token}}
