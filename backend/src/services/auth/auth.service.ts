@@ -4,6 +4,7 @@ import { AppError } from "../../utils/appError";
 import { comparePassword } from "../../utils/password";
 import { signToken } from "../../utils/jwt";
 import { assertLoginAllowed, clearLoginAttempts, recordLoginFailure } from "./loginRateLimit";
+import { createAuditLog } from "../shared/audit";
 
 export const loginWithEmail = async (email: string, password: string, rateLimitKey: string) => {
   const rateLimit = assertLoginAllowed(rateLimitKey);
@@ -31,14 +32,12 @@ export const loginWithEmail = async (email: string, password: string, rateLimitK
     role: user.role,
   });
 
-  await prisma.auditLog.create({
-    data: {
-      entity: "User",
-      entityId: String(user.id),
-      action: AUDIT_ACTIONS.LOGIN,
-      createdById: user.id,
-      afterJson: JSON.stringify({ email: user.email }),
-    },
+  await createAuditLog(prisma, {
+    entity: "User",
+    entityId: String(user.id),
+    action: AUDIT_ACTIONS.LOGIN,
+    createdById: user.id,
+    afterJson: { email: user.email },
   });
 
   return {

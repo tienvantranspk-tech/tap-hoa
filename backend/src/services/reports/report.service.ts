@@ -2,6 +2,7 @@
 import { prisma } from "../../db/prisma";
 import { env } from "../../config/env";
 import { AppError } from "../../utils/appError";
+import { createAuditLog } from "../shared/audit";
 
 type Period = "day" | "week" | "month";
 
@@ -435,17 +436,15 @@ export const closeShift = async (input: {
     dateTo: input.dateTo,
   });
 
-  await prisma.auditLog.create({
-    data: {
-      entity: "ShiftClose",
-      entityId: `${input.userId ?? "ALL"}-${Date.now()}`,
-      action: "CLOSE",
-      createdById: input.closedById,
-      afterJson: JSON.stringify({
-        userId: input.userId,
-        note: input.note,
-        summary,
-      }),
+  await createAuditLog(prisma, {
+    entity: "ShiftClose",
+    entityId: `${input.userId ?? "ALL"}-${Date.now()}`,
+    action: "CLOSE",
+    createdById: input.closedById,
+    afterJson: {
+      userId: input.userId,
+      note: input.note,
+      summary,
     },
   });
 

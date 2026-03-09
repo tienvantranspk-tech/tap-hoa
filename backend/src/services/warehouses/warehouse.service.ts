@@ -3,6 +3,7 @@ import { prisma } from "../../db/prisma";
 import { AppError } from "../../utils/appError";
 import { getStockQty } from "../shared/stock";
 import { transferStock } from "./transferStock";
+import { createAuditLog } from "../shared/audit";
 
 export { transferStock };
 
@@ -110,14 +111,12 @@ export const adjustStock = async (input: {
       },
     });
 
-    await tx.auditLog.create({
-      data: {
-        entity: "StockLedger",
-        entityId: String(entry.id),
-        action: AUDIT_ACTIONS.CREATE,
-        afterJson: JSON.stringify(entry),
-        createdById: input.createdById,
-      },
+    await createAuditLog(tx, {
+      entity: "StockLedger",
+      entityId: String(entry.id),
+      action: AUDIT_ACTIONS.CREATE,
+      afterJson: entry,
+      createdById: input.createdById,
     });
 
     return entry;
@@ -194,17 +193,15 @@ export const stockCount = async (input: {
       });
     }
 
-    await tx.auditLog.create({
-      data: {
-        entity: "StockCount",
-        entityId: refId,
-        action: AUDIT_ACTIONS.CREATE,
-        createdById: input.createdById,
-        afterJson: JSON.stringify({
-          warehouseId: input.warehouseId,
-          note: input.note,
-          adjustments,
-        }),
+    await createAuditLog(tx, {
+      entity: "StockCount",
+      entityId: refId,
+      action: AUDIT_ACTIONS.CREATE,
+      createdById: input.createdById,
+      afterJson: {
+        warehouseId: input.warehouseId,
+        note: input.note,
+        adjustments,
       },
     });
 

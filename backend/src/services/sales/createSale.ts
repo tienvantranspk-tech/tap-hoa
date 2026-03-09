@@ -13,6 +13,7 @@ import { AppError } from "../../utils/appError";
 import { nextDailyCode } from "../../utils/code";
 import { getStockQty } from "../shared/stock";
 import { incurDebt } from "../debts/debt.service";
+import { createAuditLog } from "../shared/audit";
 
 type DbLike = Pick<PrismaClient, "$transaction">;
 
@@ -173,14 +174,12 @@ export const createSale = async (input: CreateSaleInput, db: DbLike = prisma) =>
       });
     }
 
-    await tx.auditLog.create({
-      data: {
-        entity: "SalesInvoice",
-        entityId: String(invoice.id),
-        action: AUDIT_ACTIONS.CREATE,
-        afterJson: JSON.stringify(invoice),
-        createdById: input.createdById,
-      },
+    await createAuditLog(tx, {
+      entity: "SalesInvoice",
+      entityId: String(invoice.id),
+      action: AUDIT_ACTIONS.CREATE,
+      afterJson: invoice,
+      createdById: input.createdById,
     });
 
     return invoice;
@@ -234,15 +233,13 @@ export const voidInvoice = async (
       });
     }
 
-    await tx.auditLog.create({
-      data: {
-        entity: "SalesInvoice",
-        entityId: String(invoice.id),
-        action: AUDIT_ACTIONS.VOID,
-        beforeJson: JSON.stringify(invoice),
-        afterJson: JSON.stringify(updated),
-        createdById: user.id,
-      },
+    await createAuditLog(tx, {
+      entity: "SalesInvoice",
+      entityId: String(invoice.id),
+      action: AUDIT_ACTIONS.VOID,
+      beforeJson: invoice,
+      afterJson: updated,
+      createdById: user.id,
     });
 
     return updated;
@@ -353,18 +350,16 @@ export const returnInvoiceItems = async (
       });
     }
 
-    await tx.auditLog.create({
-      data: {
-        entity: "SalesInvoice",
-        entityId: String(invoice.id),
-        action: AUDIT_ACTIONS.UPDATE,
-        createdById: user.id,
-        afterJson: JSON.stringify({
-          type: "RETURN_ITEMS",
-          reason: input.reason,
-          returnedItems,
-          refundAmount,
-        }),
+    await createAuditLog(tx, {
+      entity: "SalesInvoice",
+      entityId: String(invoice.id),
+      action: AUDIT_ACTIONS.UPDATE,
+      createdById: user.id,
+      afterJson: {
+        type: "RETURN_ITEMS",
+        reason: input.reason,
+        returnedItems,
+        refundAmount,
       },
     });
 
@@ -377,4 +372,3 @@ export const returnInvoiceItems = async (
     };
   });
 };
-

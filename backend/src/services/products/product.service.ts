@@ -1,6 +1,7 @@
 ﻿import { prisma } from "../../db/prisma";
 import { AUDIT_ACTIONS } from "../../constants/domain";
 import { AppError } from "../../utils/appError";
+import { createAuditLog } from "../shared/audit";
 
 export type PaginationMeta = {
   total: number;
@@ -127,14 +128,12 @@ export const createProduct = async (
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      entity: "Product",
-      entityId: String(product.id),
-      action: AUDIT_ACTIONS.CREATE,
-      afterJson: JSON.stringify(product),
-      createdById,
-    },
+  await createAuditLog(prisma, {
+    entity: "Product",
+    entityId: String(product.id),
+    action: AUDIT_ACTIONS.CREATE,
+    afterJson: product,
+    createdById,
   });
 
   return product;
@@ -192,27 +191,23 @@ export const updateProduct = async (
       },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        entity: "Product",
-        entityId: String(product.id),
-        action: AUDIT_ACTIONS.PRICE_TIER_CHANGE,
-        beforeJson: JSON.stringify({ priceTierId: existing.priceTierId }),
-        afterJson: JSON.stringify({ priceTierId: input.priceTierId }),
-        createdById: updatedById,
-      },
+    await createAuditLog(prisma, {
+      entity: "Product",
+      entityId: String(product.id),
+      action: AUDIT_ACTIONS.PRICE_TIER_CHANGE,
+      beforeJson: { priceTierId: existing.priceTierId },
+      afterJson: { priceTierId: input.priceTierId },
+      createdById: updatedById,
     });
   }
 
-  await prisma.auditLog.create({
-    data: {
-      entity: "Product",
-      entityId: String(product.id),
-      action: AUDIT_ACTIONS.UPDATE,
-      beforeJson: JSON.stringify(existing),
-      afterJson: JSON.stringify(product),
-      createdById: updatedById,
-    },
+  await createAuditLog(prisma, {
+    entity: "Product",
+    entityId: String(product.id),
+    action: AUDIT_ACTIONS.UPDATE,
+    beforeJson: existing,
+    afterJson: product,
+    createdById: updatedById,
   });
 
   return product;
@@ -229,15 +224,13 @@ export const deactivateProduct = async (id: number, updatedById: number) => {
     data: { active: false },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      entity: "Product",
-      entityId: String(product.id),
-      action: AUDIT_ACTIONS.DELETE,
-      beforeJson: JSON.stringify(existing),
-      afterJson: JSON.stringify(product),
-      createdById: updatedById,
-    },
+  await createAuditLog(prisma, {
+    entity: "Product",
+    entityId: String(product.id),
+    action: AUDIT_ACTIONS.DELETE,
+    beforeJson: existing,
+    afterJson: product,
+    createdById: updatedById,
   });
 
   return product;
@@ -256,4 +249,3 @@ export const getProductPriceTierHistory = async (productId: number) => {
     orderBy: { changedAt: "desc" },
   });
 };
-

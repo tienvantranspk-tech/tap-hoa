@@ -4,6 +4,7 @@ import { prisma } from "../../db/prisma";
 import { AppError } from "../../utils/appError";
 import { nextDailyCode } from "../../utils/code";
 import { getStockQty } from "../shared/stock";
+import { createAuditLog } from "../shared/audit";
 
 type DbLike = Pick<PrismaClient, "$transaction">;
 
@@ -110,14 +111,12 @@ export const transferStock = async (input: TransferStockInput, db: DbLike = pris
       });
     }
 
-    await tx.auditLog.create({
-      data: {
-        entity: "StockTransfer",
-        entityId: String(transfer.id),
-        action: AUDIT_ACTIONS.CREATE,
-        afterJson: JSON.stringify(transfer),
-        createdById: input.createdById,
-      },
+    await createAuditLog(tx, {
+      entity: "StockTransfer",
+      entityId: String(transfer.id),
+      action: AUDIT_ACTIONS.CREATE,
+      afterJson: transfer,
+      createdById: input.createdById,
     });
 
     return transfer;

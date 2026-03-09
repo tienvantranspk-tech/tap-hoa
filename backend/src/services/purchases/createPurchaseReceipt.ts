@@ -4,6 +4,7 @@ import { prisma } from "../../db/prisma";
 import { AppError } from "../../utils/appError";
 import { nextDailyCode } from "../../utils/code";
 import { getGlobalStockQty } from "../shared/stock";
+import { createAuditLog } from "../shared/audit";
 
 type DbLike = Pick<PrismaClient, "$transaction">;
 
@@ -106,14 +107,12 @@ export const createPurchaseReceipt = async (input: CreatePurchaseReceiptInput, d
       });
     }
 
-    await tx.auditLog.create({
-      data: {
-        entity: "PurchaseReceipt",
-        entityId: String(receipt.id),
-        action: AUDIT_ACTIONS.CREATE,
-        afterJson: JSON.stringify(receipt),
-        createdById: input.createdById,
-      },
+    await createAuditLog(tx, {
+      entity: "PurchaseReceipt",
+      entityId: String(receipt.id),
+      action: AUDIT_ACTIONS.CREATE,
+      afterJson: receipt,
+      createdById: input.createdById,
     });
 
     return receipt;
